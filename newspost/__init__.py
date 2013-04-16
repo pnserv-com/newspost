@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
 
 import os
-import sys
 import json
 import glob
 import datetime
+from argparse import ArgumentParser
 
 
 def expandpath(path):
@@ -30,9 +30,15 @@ def register(filename):
     print json.dumps(param, ensure_ascii=False)
 
 
+def parse_args():
+    parser = ArgumentParser()
+    parser.add_argument('dir')
+    return parser.parse_args()
+
+
 def main():
-    path = sys.argv[1]
-    rule = os.path.join(expandpath(path), '*_char54_*.json')
+    args = parse_args()
+    rule = os.path.join(expandpath(args.dir), '*_char54_*.json')
 
     for filename in glob.glob(rule):
         register(filename)
