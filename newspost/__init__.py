@@ -28,7 +28,7 @@ def prepare(filename):
     mtime = datetime.datetime.fromtimestamp(os.path.getmtime(filename))
     return {
         "type": name.split('_')[-1],
-        "articles": extract(parse(filename)),
+        "articles": [x.encode('utf-8') for x in extract(parse(filename))],
         "updated_at": mtime.isoformat()
     }
 
