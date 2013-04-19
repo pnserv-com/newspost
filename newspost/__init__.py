@@ -19,18 +19,14 @@ def parse(filename):
         return json.load(f)
 
 
-def extract(news):
-    return [x['article'] for x in sorted(news, key=lambda x: x['seq'])]
-
-
 def prepare(filename):
     name = os.path.splitext(os.path.basename(filename))[0]
     mtime = datetime.datetime.fromtimestamp(os.path.getmtime(filename))
-    return {
-        "type": name.split('_')[-1],
-        "articles": [x.encode('utf-8') for x in extract(parse(filename))],
-        "updated_at": mtime.isoformat()
-    }
+    return [dict(article=item['article'].encode('utf-8'),
+                 seq='{:02}'.format(item['seq']),
+                 type=name.split('_')[-1],
+                 delivered_at=mtime.isoformat())
+            for item in parse(filename)]
 
 
 def upsert(nckvs, data):
@@ -52,11 +48,14 @@ def main():
     parser.read(args.config)
     config = dict(parser.items('nckvs'))
     config['datatypeversion'] = int(config.get('datatypeversion', '1'))
-    nckvs = KVSClient(**config)
 
+    data = []
     rule = os.path.join(expandpath(args.dir), '*_char54_*.json')
-    data = [prepare(x) for x in glob.glob(rule)]
-    print upsert(nckvs, data)
+    for filename in glob.glob(rule):
+        data.extend(prepare(filename))
+
+    nckvs = KVSClient(**config)
+    upsert(nckvs, data)
 
 
 if __name__ == '__main__':
