@@ -3,6 +3,7 @@
 import os
 import json
 import glob
+import time
 import datetime
 from argparse import ArgumentParser
 from ConfigParser import SafeConfigParser
@@ -19,13 +20,14 @@ def parse(filename):
         return json.load(f)
 
 
-def prepare(filename):
+def prepare(filename, timestamp):
     name = os.path.splitext(os.path.basename(filename))[0]
     mtime = datetime.datetime.fromtimestamp(os.path.getmtime(filename))
     return [dict(article=item['article'].encode('utf-8'),
                  seq='{:02}'.format(item['seq']),
                  type=name.split('_')[-1],
-                 delivered_at=mtime.isoformat())
+                 delivered_at=mtime.isoformat(),
+                 timestamp=timestamp)
             for item in parse(filename)]
 
 
@@ -50,9 +52,10 @@ def main():
     config['datatypeversion'] = int(config.get('datatypeversion', '1'))
 
     data = []
+    timestamp = int(time.time())
     rule = os.path.join(expandpath(args.dir), '*_char54_*.json')
     for filename in glob.glob(rule):
-        data.extend(prepare(filename))
+        data.extend(prepare(filename, timestamp=timestamp))
 
     nckvs = KVSClient(**config)
     upsert(nckvs, data)
